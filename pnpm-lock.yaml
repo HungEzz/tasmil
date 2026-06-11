@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@ai-sdk/google':
+        specifier: ^2.0.74
+        version: 2.0.74(zod@3.25.76)
       '@ai-sdk/openai':
         specifier: ^2.0.34
         version: 2.0.34(zod@3.25.76)
@@ -387,6 +390,12 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4
 
+  '@ai-sdk/google@2.0.74':
+    resolution: {integrity: sha512-Lhw1742RXc+4pRIvqVXa0jdl5+qdpmw8lj0lm6OchUg9rVGHzymlaxe7CDiYX5U2af4jbjKeTY22LDi3bIycgQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/openai-compatible@1.0.13':
     resolution: {integrity: sha512-g46fLVWKcVg1XOFzDLoJ0XuhtY5XxxBwMQ0FT/aHwCtg6WUvk3Elrd+MKmgfvhZAdIR7CpUTvgJAAipu4RW75w==}
     engines: {node: '>=18'}
@@ -398,6 +407,12 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4
+
+  '@ai-sdk/provider-utils@3.0.25':
+    resolution: {integrity: sha512-CvsRu+32Y8a167s+lrIBtsybvgTHp8j9y+6BeTvLeoW3Q+okw/b4CnNUFOLIXsRaKHQKAH+IHNJPYWywfpw0LA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
 
   '@ai-sdk/provider-utils@3.0.7':
     resolution: {integrity: sha512-o3BS5/t8KnBL3ubP8k3w77AByOypLm+pkIL/DCw0qKkhDbvhCy+L3hRTGPikpdb8WHcylAeKsjgwOxhj4cqTUA==}
@@ -413,6 +428,10 @@ packages:
 
   '@ai-sdk/provider@2.0.0':
     resolution: {integrity: sha512-6o7Y2SeO9vFKB8lArHXehNuusnpddKPk7xqL7T2/b+OvXMRIXUO1rR4wcv1hAFUAT9avGZshty3Wlua/XA7TvA==}
+    engines: {node: '>=18'}
+
+  '@ai-sdk/provider@2.0.3':
+    resolution: {integrity: sha512-h88OPkavHTiN9tMn2l5awAznGB0lXzjcLhgR1/rvjB2zlLprsNxbM2tt6OJsHUxduLC3klq0/eqaSf6fX5XVww==}
     engines: {node: '>=18'}
 
   '@ai-sdk/react@2.0.26':
@@ -2325,6 +2344,9 @@ packages:
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
 
+  '@standard-schema/spec@1.1.0':
+    resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
+
   '@stepperize/core@1.2.7':
     resolution: {integrity: sha512-XiUwLZ0XRAfaDK6AzWVgqvI/BcrylyplhUXKO8vzgRw0FTmyMKHAAbQLDvU//ZJAqnmG2cSLZDSkcwLxU5zSYA==}
     peerDependencies:
@@ -3476,6 +3498,10 @@ packages:
   eventsource-parser@3.0.5:
     resolution: {integrity: sha512-bSRG85ZrMdmWtm7qkF9He9TNRzc/Bm99gEJMaQoHJ9E6Kv9QBbsldh2oMj7iXmYNEAVvNgvv5vPorG6W+XtBhQ==}
     engines: {node: '>=20.0.0'}
+
+  eventsource-parser@3.1.0:
+    resolution: {integrity: sha512-kJezFj9YFAMLeORyi7aCLxLbD5/qWMQnoMVlVPyHIll7lgRJCc3JVln9Vgl9nwQi0YkMnhdGTMNn7CkRRAptMg==}
+    engines: {node: '>=18.0.0'}
 
   expect-type@1.2.2:
     resolution: {integrity: sha512-JhFGDVJ7tmDJItKhYgJCGLOWjuK9vPxiXoUFLwLDc99NlmklilbiQJwoctZtt13+xMw91MCk/REan6MWHqDjyA==}
@@ -5132,6 +5158,12 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.7(zod@3.25.76)
       zod: 3.25.76
 
+  '@ai-sdk/google@2.0.74(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.3
+      '@ai-sdk/provider-utils': 3.0.25(zod@3.25.76)
+      zod: 3.25.76
+
   '@ai-sdk/openai-compatible@1.0.13(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
@@ -5142,6 +5174,13 @@ snapshots:
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.9(zod@3.25.76)
+      zod: 3.25.76
+
+  '@ai-sdk/provider-utils@3.0.25(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.3
+      '@standard-schema/spec': 1.1.0
+      eventsource-parser: 3.1.0
       zod: 3.25.76
 
   '@ai-sdk/provider-utils@3.0.7(zod@3.25.76)':
@@ -5159,6 +5198,10 @@ snapshots:
       zod: 3.25.76
 
   '@ai-sdk/provider@2.0.0':
+    dependencies:
+      json-schema: 0.4.0
+
+  '@ai-sdk/provider@2.0.3':
     dependencies:
       json-schema: 0.4.0
 
@@ -6923,6 +6966,8 @@ snapshots:
 
   '@standard-schema/spec@1.0.0': {}
 
+  '@standard-schema/spec@1.1.0': {}
+
   '@stepperize/core@1.2.7(typescript@5.8.2)':
     dependencies:
       typescript: 5.8.2
@@ -8066,6 +8111,8 @@ snapshots:
   eventemitter3@5.0.1: {}
 
   eventsource-parser@3.0.5: {}
+
+  eventsource-parser@3.1.0: {}
 
   expect-type@1.2.2: {}
 

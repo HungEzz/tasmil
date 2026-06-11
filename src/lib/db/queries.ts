@@ -200,6 +200,11 @@ export async function getChatsByUserId({
 }
 
 export async function getChatById({ id }: { id: string }) {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) {
+    return null;
+  }
+
   try {
     const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
     if (!selectedChat) {
@@ -208,6 +213,7 @@ export async function getChatById({ id }: { id: string }) {
 
     return selectedChat;
   } catch (_error) {
+    console.error("Error in getChatById:", _error);
     throw new ChatSDKError("bad_request:database", "Failed to get chat by id");
   }
 }

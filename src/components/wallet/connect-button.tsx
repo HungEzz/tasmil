@@ -13,7 +13,7 @@ import { AccountService } from "@/services/account.service";
 import { useWalletStore } from "@/store/use-wallet";
 import { truncateAddress, useWallet } from "@aptos-labs/wallet-adapter-react";
 import { Loader2, LogOut, User, Wallet } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import ButtonCopy from "@/components/wallet/menu/button-copy";
 import { WalletIcon } from "@/components/wallet/wallet-icon";
@@ -154,6 +154,7 @@ const authenticateWallet = async (
   walletAccount: WalletAccount,
   signMessage: (args: { message: string; nonce: string }) => Promise<any>
 ) => {
+  console.log("walletAccount inside authenticateWallet:", walletAccount);
   // Get nonce
   const { nonce, message } = (await AuthService.getNonce(
     walletAccount.address
@@ -166,7 +167,18 @@ const authenticateWallet = async (
 
   // Sign message
   const signature = await signMessage({ message, nonce });
+  console.log("signature returned from signMessage:", signature);
   if (!signature) throw new Error("User rejected signature");
+
+  console.log("Calling verifySignature with:", {
+    walletAddress: walletAccount.address,
+    publicKey: walletAccount.publicKey,
+    signature: (signature.signature as any).signature || String(signature.signature),
+    signatureType: typeof signature.signature,
+    signatureStringVal: String(signature.signature),
+    message: signature.fullMessage,
+    nonce,
+  });
 
   // Verify signature
   const response = await AuthService.verifySignature({
@@ -206,12 +218,8 @@ export default function ConnectButton({
     wallets,
   } = useWallet();
 
-  console.log("walletAccount", walletAccount);
-  console.log("walletConnected", walletConnected);
-  console.log("disconnect", disconnect);
-  console.log("connect", connect);
-  console.log("signMessage", signMessage);
-  console.log("wallets", wallets);
+  // Ref to prevent duplicate authentication attempts
+  const isAuthenticatingRef = useRef(false);
 
   const {
     setWalletState,
@@ -222,50 +230,87 @@ export default function ConnectButton({
     reset: resetWalletState,
   } = useWalletStore();
 
-  const handleConnect = useCallback(
-    async (walletName: string) => {
-      let needsDisconnect = false;
+  // Automatically trigger authentication when wallet is connected but not yet verified
+  useEffect(() => {
+    const autoAuthenticate = async () => {
+      // Guard: skip if already authenticating, or conditions not met
+      if (
+        isAuthenticatingRef.current ||
+        !walletConnected ||
+        !walletAccount ||
+        verified ||
+        sessionStorage.getItem(AUTH_CANCELLED_KEY) === "true"
+      ) {
+        return;
+      }
+
+      // Lock to prevent duplicate runs
+      isAuthenticatingRef.current = true;
 
       try {
         setSigning(true);
-        console.log(`Connecting to ${walletName}...`);
 
-        // Connect wallet
-        await connect(walletName);
-        needsDisconnect = true;
-        console.log(`Connected to ${walletName}`);
+        // Wait for wallet adapter internal state synchronization
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
-        // Wait for wallet initialization
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Extract publicKey correctly - it's a PublicKey object, use toString()
+        let publicKeyHex = "";
+        if (walletAccount.publicKey) {
+          if (typeof walletAccount.publicKey === "string") {
+            publicKeyHex = walletAccount.publicKey;
+          } else if (typeof walletAccount.publicKey.toString === "function") {
+            // PublicKey class from @aptos-labs/wallet-adapter-react
+            publicKeyHex = walletAccount.publicKey.toString();
+          }
+        }
 
-        // Get wallet account
-        const walletAccount = await getWalletAccount(walletName);
-        if (!walletAccount.address) {
+        // Extract address correctly - it's an AccountAddress object in modern adapter, use toString()
+        let addressStr = "";
+        if (walletAccount.address) {
+          if (typeof walletAccount.address === "string") {
+            addressStr = walletAccount.address;
+          } else if (typeof walletAccount.address.toString === "function") {
+            addressStr = walletAccount.address.toString();
+          }
+        }
+
+        const accountData = {
+          address: addressStr,
+          publicKey: publicKeyHex,
+        };
+
+        console.log("Extracted accountData for authentication:", accountData);
+
+        if (!accountData.address) {
           throw new Error("No account found");
+        }
+
+        if (!accountData.publicKey) {
+          throw new Error("Could not extract public key from wallet");
         }
 
         // Authenticate wallet
         const authResponse = await authenticateWallet(
-          walletAccount,
+          accountData,
           signMessage
         );
 
         // Check user account
-        const tasmilAddress = await checkUserAccount(walletAccount.address);
+        const tasmilAddress = await checkUserAccount(accountData.address);
 
         // Success
         sessionStorage.removeItem(AUTH_CANCELLED_KEY);
         setWalletState({
           connected: true,
-          account: walletAccount.address,
+          account: accountData.address,
           tasmilAddress,
         });
 
         toast.success("Wallet Connected", {
           description: authResponse?.message,
         });
-        needsDisconnect = false;
       } catch (error: any) {
+        console.error("Authentication failed:", error);
         const isCancelled =
           error.message?.includes("rejected") || error.code === 4001;
 
@@ -276,31 +321,54 @@ export default function ConnectButton({
             typeof error === "string"
               ? error
               : error?.message || "Unknown error occurred";
-          toast.error("Connection Failed", { description: errorMessage });
+          toast.error("Authentication Failed", { description: errorMessage });
         }
 
-        // Cleanup
-        if (needsDisconnect) {
-          try {
-            disconnect();
-          } catch (err) {
-            console.error("Failed to disconnect:", err);
-          }
-        }
+        // Cleanup and reset on error
         resetWalletState();
-        disconnect();
+        try {
+          disconnect();
+        } catch (err) {
+          console.error("Failed to disconnect:", err);
+        }
+      } finally {
+        setSigning(false);
+        isAuthenticatingRef.current = false;
+      }
+    };
+
+    autoAuthenticate();
+  }, [
+    walletConnected,
+    walletAccount,
+    verified,
+    signMessage,
+    setWalletState,
+    setSigning,
+    resetWalletState,
+    disconnect,
+  ]);
+
+  const handleConnect = useCallback(
+    async (walletName: string) => {
+      try {
+        setSigning(true);
+        console.log(`Connecting to ${walletName}...`);
+
+        // Connect wallet
+        await connect(walletName);
+        console.log(`Connected to ${walletName}`);
+      } catch (error: any) {
+        console.error("Connection failed:", error);
+        toast.error("Connection Failed", {
+          description: error?.message || "Unknown error occurred",
+        });
+        resetWalletState();
       } finally {
         setSigning(false);
       }
     },
-    [
-      connect,
-      disconnect,
-      setWalletState,
-      setSigning,
-      signMessage,
-      resetWalletState,
-    ]
+    [connect, setSigning, resetWalletState]
   );
 
   const handleDisconnect = useCallback(async () => {

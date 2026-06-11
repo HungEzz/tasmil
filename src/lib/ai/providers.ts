@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
 import {
   customProvider,
   extractReasoningMiddleware,
@@ -25,34 +25,10 @@ export const myProvider = isTestEnvironment
     })()
   : customProvider({
       languageModels: {
-        // OpenAI Models (GPT-4o)
-        "chat-model": openai("gpt-4o"),
-        "chat-model-reasoning": wrapLanguageModel({
-          model: openai("gpt-4o"),
-          middleware: extractReasoningMiddleware({ tagName: "think" }),
-        }),
-        "title-model": openai("gpt-4o-mini"),
-        "artifact-model": openai("gpt-4o"),
-        
-        // Alternative models (uncomment to use)
-        // XAI Models (Grok)
-      //   languageModels: {
-      //   "chat-model": gateway.languageModel("xai/grok-2-vision-1212"),
-      //   "chat-model-reasoning": wrapLanguageModel({
-      //     model: gateway.languageModel("xai/grok-3-mini"),
-      //     middleware: extractReasoningMiddleware({ tagName: "think" }),
-      //   }),
-      //   "title-model": gateway.languageModel("xai/grok-2-1212"),
-      //   "artifact-model": gateway.languageModel("xai/grok-2-1212"),
-      // },
-        
-        // Anthropic models (uncomment to use)
-        // "chat-model": anthropic("claude-3-5-sonnet-20241022"),
-        // "chat-model-reasoning": wrapLanguageModel({
-        //   model: anthropic("claude-3-5-sonnet-20241022"),
-        //   middleware: extractReasoningMiddleware({ tagName: "think" }),
-        // }),
-        // "title-model": anthropic("claude-3-5-haiku-20241022"),
-        // "artifact-model": anthropic("claude-3-5-sonnet-20241022"),
+        // Google Gemini Models
+        "chat-model": google("gemini-2.5-flash"),
+        "chat-model-reasoning": google("gemini-2.5-flash"),
+        "title-model": google("gemini-2.5-flash"),
+        "artifact-model": google("gemini-2.5-flash"),
       },
     });
