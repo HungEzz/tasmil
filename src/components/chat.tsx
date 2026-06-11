@@ -32,6 +32,7 @@ import { MultimodalInput } from "./multimodal-input";
 import { getChatHistoryPaginationKey } from "./sidebar-history";
 import { toast } from "./toast";
 import type { VisibilityType } from "./visibility-selector";
+import { useWalletStore } from "@/store/use-wallet";
 
 export function Chat({
   id,
@@ -91,6 +92,8 @@ export function Chat({
             message: request.messages.at(-1),
             selectedChatModel: currentModelIdRef.current,
             selectedVisibilityType: visibilityType,
+            walletAddress: useWalletStore.getState().account,
+            tasmilAddress: useWalletStore.getState().tasmilAddress,
             ...request.body,
           },
         };
@@ -112,6 +115,11 @@ export function Chat({
           error.message?.includes("AI Gateway requires a valid credit card")
         ) {
           setShowCreditCardAlert(true);
+        } else if (error.type === "rate_limit") {
+          toast({
+            type: "error",
+            description: "You have reached your daily chat limit. Please try again later!",
+          });
         } else {
           toast({
             type: "error",

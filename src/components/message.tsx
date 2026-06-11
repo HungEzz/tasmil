@@ -51,7 +51,29 @@ const PurePreviewMessage = ({
     (part) => part.type === "file"
   );
 
+  const hasContent = message.parts?.some((part) => {
+    if (part.type === "reasoning" && part.text?.trim().length > 0) {
+      return true;
+    }
+    if (part.type === "text" && part.text?.trim().length > 0) {
+      return true;
+    }
+    if (
+      part.type === "tool-getWeather" ||
+      part.type === "tool-createDocument" ||
+      part.type === "tool-updateDocument" ||
+      part.type === "tool-requestSuggestions"
+    ) {
+      return true;
+    }
+    return false;
+  });
+
   useDataStream();
+
+  if (message.role === "assistant" && !hasContent && !isLoading) {
+    return null;
+  }
 
   return (
     <motion.div
@@ -276,6 +298,28 @@ const PurePreviewMessage = ({
             return null;
           })}
 
+          {!hasContent && message.role === "assistant" && isLoading && (
+            <div className="flex flex-col gap-2 bg-muted/40 dark:bg-muted/15 rounded-2xl px-4 py-3 border border-border/50 w-fit">
+              <div className="flex items-center gap-1.5 h-4 px-1">
+                <motion.span
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                  className="size-2 rounded-full bg-primary"
+                />
+                <motion.span
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
+                  className="size-2 rounded-full bg-primary"
+                />
+                <motion.span
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
+                  className="size-2 rounded-full bg-primary"
+                />
+              </div>
+            </div>
+          )}
+
           {!isReadonly && (
             <MessageActions
               chatId={chatId}
@@ -327,39 +371,35 @@ export const ThinkingMessage = () => {
       initial={{ opacity: 0 }}
     >
       <div className="flex items-start justify-start gap-3">
-        <div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
-          <SparklesIcon size={14} />
+        <div className="-mt-1 flex size-10 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
+          <Image
+            src="/images/logo.png"
+            alt="DeFi Agent"
+            width={30}
+            height={30}
+          />
         </div>
 
-        <div className="flex w-full flex-col gap-2 md:gap-4">
-          <div className="p-0 text-muted-foreground text-sm">
-            <LoadingText>Thinking...</LoadingText>
+        <div className="flex flex-col gap-2 bg-muted/40 dark:bg-muted/15 rounded-2xl px-4 py-3 border border-border/50">
+          <div className="flex items-center gap-1.5 h-4 px-1">
+            <motion.span
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+              className="size-2 rounded-full bg-primary"
+            />
+            <motion.span
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
+              className="size-2 rounded-full bg-primary"
+            />
+            <motion.span
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
+              className="size-2 rounded-full bg-primary"
+            />
           </div>
         </div>
       </div>
-    </motion.div>
-  );
-};
-
-const LoadingText = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <motion.div
-      animate={{ backgroundPosition: ["100% 50%", "-100% 50%"] }}
-      className="flex items-center text-transparent"
-      style={{
-        background:
-          "linear-gradient(90deg, hsl(var(--muted-foreground)) 0%, hsl(var(--muted-foreground)) 35%, hsl(var(--foreground)) 50%, hsl(var(--muted-foreground)) 65%, hsl(var(--muted-foreground)) 100%)",
-        backgroundSize: "200% 100%",
-        WebkitBackgroundClip: "text",
-        backgroundClip: "text",
-      }}
-      transition={{
-        duration: 1.5,
-        repeat: Number.POSITIVE_INFINITY,
-        ease: "linear",
-      }}
-    >
-      {children}
     </motion.div>
   );
 };
