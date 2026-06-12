@@ -1,6 +1,31 @@
 import { NextResponse } from "next/server";
 import { API_BASE_URL } from "@/constants/routes";
 
+function getMockHistory(symbol: string) {
+  const mockPoints = [];
+  const mockPrice = symbol.includes("BTC") 
+    ? 63000 
+    : symbol.includes("ETH") 
+    ? 3400 
+    : symbol.includes("SOL") 
+    ? 150 
+    : symbol.includes("APT") 
+    ? 8 
+    : 10;
+  const now = Date.now();
+  for (let i = 29; i >= 0; i--) {
+    const timestamp = now - i * 24 * 60 * 60 * 1000;
+    const randomChange = (Math.random() - 0.5) * 6; // random fluctuations
+    mockPoints.push({
+      timestamp,
+      price: mockPrice * (1 + randomChange / 100),
+    });
+  }
+  return {
+    [symbol]: mockPoints,
+  };
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const symbols = searchParams.get("symbols");
@@ -14,36 +39,17 @@ export async function GET(request: Request) {
   const symbol = symbols.split(",")[0].trim();
 
   try {
+    if (!API_BASE_URL) {
+      console.warn("API_BASE_URL is not defined. Returning mock history data.");
+      return NextResponse.json(getMockHistory(symbol));
+    }
+
     const backendUrl = `${API_BASE_URL}/dashboard/price-history?symbol=${symbol}&period=${period}`;
     const response = await fetch(backendUrl);
     
     if (!response.ok) {
       console.warn(`Backend returned status ${response.status} for get-history of ${symbol}. Returning fallback mock data.`);
-      
-      // Fallback: generate mock data
-      const mockPoints = [];
-      const mockPrice = symbol.includes("BTC") 
-        ? 63000 
-        : symbol.includes("ETH") 
-        ? 3400 
-        : symbol.includes("SOL") 
-        ? 150 
-        : symbol.includes("APT") 
-        ? 8 
-        : 10;
-      const now = Date.now();
-      for (let i = 29; i >= 0; i--) {
-        const timestamp = now - i * 24 * 60 * 60 * 1000;
-        const randomChange = (Math.random() - 0.5) * 6; // random fluctuations
-        mockPoints.push({
-          timestamp,
-          price: mockPrice * (1 + randomChange / 100),
-        });
-      }
-
-      return NextResponse.json({
-        [symbol]: mockPoints,
-      });
+      return NextResponse.json(getMockHistory(symbol));
     }
     
     const data = await response.json();
@@ -64,7 +70,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(result);
   } catch (error: any) {
-    console.error("Error in dashboard get-history API proxy:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Error in dashboard get-history API proxy, returning mock data:", error);
+    return NextResponse.json(getMockHistory(symbol));
   }
 }
