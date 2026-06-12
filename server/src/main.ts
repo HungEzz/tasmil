@@ -16,7 +16,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://tasmil-finance.vercel.app'],
+    origin: ['http://localhost:3000', process.env.FRONTEND_URL || 'https://tasmil-finance.vercel.app'],
     credentials: true,
   });
 

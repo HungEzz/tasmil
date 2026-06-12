@@ -8,6 +8,26 @@ export class RedisConfigService {
   constructor(private configService: ConfigService) {}
 
   getRedisConfig(): RedisClientOptions {
+    const redisUrl = this.configService.get<string>('REDIS_URL');
+    if (redisUrl) {
+      return {
+        url: redisUrl,
+        socket: {
+          reconnectStrategy: (retries: number) => {
+            if (retries > 10) {
+              this.logger.error('Redis reconnection failed after 10 attempts');
+              return new Error('Redis reconnection failed');
+            }
+            const delay = Math.min(retries * 100, 3000);
+            this.logger.warn(
+              `Reconnecting to Redis... Attempt ${retries}, delay: ${delay}ms`,
+            );
+            return delay;
+          },
+        },
+      };
+    }
+
     const config: RedisClientOptions = {
       username: this.configService.get<string>('REDIS_USERNAME'),
       password: this.configService.get<string>('REDIS_PASSWORD'),
@@ -35,6 +55,11 @@ export class RedisConfigService {
   }
 
   private validateConfig(config: RedisClientOptions): void {
+    if (config.url) {
+      this.logger.log('Redis configured using connection URL');
+      return;
+    }
+
     if (!config.socket?.connectTimeout) {
       this.logger.warn('Redis host not configured');
     }
@@ -49,8 +74,10 @@ export class RedisConfigService {
   }
 
   getCacheConfig() {
+    const redisUrl = this.configService.get<string>('REDIS_URL');
     return {
       store: 'redis',
+      url: redisUrl,
       host: this.configService.get<string>('REDIS_HOST', 'localhost'),
       port: this.configService.get<number>('REDIS_PORT', 6379),
       username: this.configService.get<string>('REDIS_USERNAME'),

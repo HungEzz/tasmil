@@ -23,21 +23,25 @@ export class RedisModule {
             const redisConfig = new RedisConfigService(configService);
             const config = redisConfig.getCacheConfig();
 
-            const keyvRedis = new KeyvRedis({
-              username: config.username,
-              password: config.password,
-              socket: {
-                host: config.host,
-                port: config.port,
-              },
-            });
+            const keyvRedis = config.url
+              ? new KeyvRedis(config.url)
+              : new KeyvRedis({
+                  username: config.username,
+                  password: config.password,
+                  socket: {
+                    host: config.host,
+                    port: config.port,
+                  },
+                });
 
             const keyv = new Keyv({ store: keyvRedis });
 
             // Add connection status logging
             keyvRedis.on('connect', () => {
               RedisModule.logger.log(
-                `Redis connected successfully to ${config.host}:${config.port}`,
+                config.url
+                  ? 'Redis connected successfully using URL'
+                  : `Redis connected successfully to ${config.host}:${config.port}`,
               );
             });
 

@@ -1,4 +1,4 @@
-import { put } from "@vercel/blob";
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -46,18 +46,54 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
-    // Get filename from formData since Blob doesn't have name property
-    const filename = (formData.get("file") as File).name;
-    const fileBuffer = await file.arrayBuffer();
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      return NextResponse.json({ error: "Cloudinary is not configured" }, { status: 500 });
+    }
+
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const signature = crypto
+      .createHash("sha1")
+      .update(`timestamp=${timestamp}${apiSecret}`)
+      .digest("hex");
+
+    const uploadFormData = new FormData();
+    uploadFormData.append("file", file);
+    uploadFormData.append("api_key", apiKey);
+    uploadFormData.append("timestamp", timestamp.toString());
+    uploadFormData.append("signature", signature);
 
     try {
-      const data = await put(`${filename}`, fileBuffer, {
-        access: "public",
-      });
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: uploadFormData,
+        }
+      );
 
-      return NextResponse.json(data);
-    } catch (_error) {
-      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+      if (!response.ok) {
+        const errData = await response.json();
+        return NextResponse.json(
+          { error: errData.error?.message || "Upload to Cloudinary failed" },
+          { status: response.status }
+        );
+      }
+
+      const data = await response.json();
+      return NextResponse.json({
+        url: data.secure_url,
+        pathname: data.public_id,
+        contentType: file.type,
+      });
+    } catch (error: any) {
+      return NextResponse.json(
+        { error: error.message || "Upload failed" },
+        { status: 500 }
+      );
     }
   } catch (_error) {
     return NextResponse.json(
