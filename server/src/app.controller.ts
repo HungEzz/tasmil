@@ -11,4 +11,9 @@ export class AppController {
   getHealth(): { status: string; timestamp: string } {
     return this.appService.getHealth();
   }
+
+  @Get('health')
+  getHealthExplicit(): { status: string; timestamp: string } {
+    return this.appService.getHealth();
+  }
 }
